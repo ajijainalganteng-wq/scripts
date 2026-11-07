@@ -165,8 +165,8 @@ NET=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
 [[ -z "$NET" ]] && NET="eth0"
 
 function ADD_CEEF() {
-EMAILCF="newvpnlunatix293@gmail.com"
-KEYCF="88a8619c3dec8a0c9a14cf353684036108844"
+EMAILCF="ajijainalganteng@gmail.com"
+KEYCF="507d5909dab363357fd089c9ff021e51"
 echo "$EMAILCF" > /usr/bin/emailcf
 echo "$KEYCF" > /usr/bin/keycf
 }
@@ -498,8 +498,8 @@ apt install -y dirmngr >/dev/null 2>&1 & loading $! "Installing dirmngr"
     print_success "IPTables configuration complete"
 }
 
-CF_ID="newvpnlunatix293@gmail.com"
-CF_KEY="88a8619c3dec8a0c9a14cf353684036108844"
+CF_ID="ajijainalganteng@gmail.com"
+CF_KEY="507d5909dab363357fd089c9ff021e51"
 
 DOMAIN="execshell.cloud"
 IPVPS=$(curl -s ipv4.icanhazip.com)
