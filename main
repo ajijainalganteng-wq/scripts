@@ -744,7 +744,7 @@ XRAY_SETUP() {
     id www-data >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin www-data
     chown www-data:www-data "$domainSock_dir"
 
-    (bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data >/dev/null 2>&1) & loading $! "Installing Xray Core"
+    (bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install  >/dev/null 2>&1) & loading $! "Installing Xray Core"
     (wget -q -O /etc/xray/config.json "${GIT_REPO}configure/config.json") & loading $! "Downloading Xray config"
     (wget -q -O /etc/systemd/system/runn.service "${GIT_REPO}configure/runn.service") & loading $! "Downloading runn.service"
 
