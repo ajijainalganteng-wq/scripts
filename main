@@ -741,13 +741,15 @@ XRAY_SETUP() {
 
     local domainSock_dir="/run/xray"
     [[ ! -d $domainSock_dir ]] && mkdir -p "$domainSock_dir"
+    # 2026-11-08: pin Xray v26.10.31 (rilis terbaru v26, 31 Okt 2026); $latest_version sebelumnya tidak pernah didefinisikan sehingga --version dikirim kosong dan install bisa gagal diam-diam.
+    local latest_version="v26.10.31"
     id www-data >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin www-data
     chown www-data:www-data "$domainSock_dir"
 
     (bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data --version $latest_version
     >/dev/null 2>&1) & loading $! "Installing Xray Core"
     (wget -q -O /etc/xray/config.json "${GIT_REPO}configure/config.json") & loading $! "Downloading Xray config"
-    (wget -q -O /etc/systemd/system/runn.service "${GIT_REPO}configure/runn.service") & loading $! "Downloading runn.service"
+    # 2026-11-08: unduhan runn.service DIHAPUS — file configure/runn.service tidak ada di repo (404), wget -q gagal diam-diam.
 
     if [[ ! -f /etc/xray/domain ]]; then
         print_error "Domain file not found at /etc/xray/domain"
@@ -1440,7 +1442,7 @@ function RUN_INSTALLER() {
 
     run_step "Initializing proxy & web server"         PROXY_SETUP
     run_step "Installing core system packages"         TOOLS_SETUP
-    run_step "Creating directory structure"            FODER_SETUP
+    run_step "Creating directory structure"            FOLDER_SETUP
 
     # Domain menu butuh input user — tampil normal
     DOMAIN_MENU
