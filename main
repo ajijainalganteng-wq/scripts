@@ -741,8 +741,6 @@ XRAY_SETUP() {
 
     local domainSock_dir="/run/xray"
     [[ ! -d $domainSock_dir ]] && mkdir -p "$domainSock_dir"
-    # 2026-11-08: pin Xray v26.10.31 (rilis terbaru v26, 31 Okt 2026); $latest_version sebelumnya tidak pernah didefinisikan sehingga --version dikirim kosong dan install bisa gagal diam-diam.
-    local latest_version="v26.10.31"
     id www-data >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin www-data
     chown www-data:www-data "$domainSock_dir"
 
