@@ -51,10 +51,7 @@ auth-user-pass
 comp-lzo
 verb 3
 END
-
 sed -i $MYIP2 /etc/openvpn/tcp.ovpn;
-
-# Buat config client UDP 2200
 cat > /etc/openvpn/udp.ovpn <<-END
 client
 dev tun
@@ -69,15 +66,12 @@ auth-user-pass
 comp-lzo
 verb 3
 END
-
 sed -i $MYIP2 /etc/openvpn/udp.ovpn;
-
-# Buat config client SSL
-cat > /etc/openvpn/ssl.ovpn <<-END
+cat > /etc/openvpn/ws-ssl.ovpn <<-END
 client
 dev tun
 proto tcp
-remote xxxxxxxxx 990
+remote xxxxxxxxx 443
 resolv-retry infinite
 route-method exe
 nobind
@@ -87,7 +81,21 @@ auth-user-pass
 comp-lzo
 verb 3
 END
-
+sed -i $MYIP2 /etc/openvpn/ws-ssl.ovpn;
+cat > /etc/openvpn/ssl.ovpn <<-END
+client
+dev tun
+proto tcp
+remote xxxxxxxxx 443
+resolv-retry infinite
+route-method exe
+nobind
+persist-key
+persist-tun
+auth-user-pass
+comp-lzo
+verb 3
+END
 sed -i $MYIP2 /etc/openvpn/ssl.ovpn;
 
 cd
