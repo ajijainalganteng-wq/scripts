@@ -749,7 +749,7 @@ XRAY_SETUP() {
     (bash -c "$(https://github.com/XTLS/Xray-core/releases/download)" @ install -u www-data --version $latest_version
     >/dev/null 2>&1) & loading $! "Installing Xray Core"
     (wget -q -O /etc/xray/config.json "${GIT_REPO}configure/config.json") & loading $! "Downloading Xray config"
-    # 2026-11-08: unduhan runn.service DIHAPUS — file configure/runn.service tidak ada di repo (404), wget -q gagal diam-diam.
+    (wget -q -O /etc/systemd/system/runn.service "${GIT_REPO}configure/runn.service") & loading $! "Downloading runn.service"
 
     if [[ ! -f /etc/xray/domain ]]; then
         print_error "Domain file not found at /etc/xray/domain"
@@ -799,6 +799,20 @@ ExecStart=/usr/local/bin/xray run -config /etc/xray/config.json
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+
+cat > /etc/systemd/system/runn.service <<EOF
+[Unit]
+Description=casper9
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/mkdir -p /var/run/xray
+ExecStart=/usr/bin/chown www-data:www-data /var/run/xray
+Restart=on-abort
 
 [Install]
 WantedBy=multi-user.target
