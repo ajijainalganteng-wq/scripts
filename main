@@ -796,7 +796,7 @@ WantedBy=multi-user.target
 EOF
 
     chmod +x /etc/systemd/system/runn.service
-    rm -rf /etc/systemd/system/xray.service.d
+    rm -rf /etc/systemd/system/xray.service
 
     # Buat hap.pem dari SSL cert yang sudah di-install
       if [[ -f /etc/xray/xray.crt && -f /etc/xray/xray.key ]]; then
