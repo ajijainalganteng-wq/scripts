@@ -1,0 +1,271 @@
+
+#!/bin/bash
+set -Eeuo pipefail
+
+# ---------- KONFIGURASI ----------
+XRAY_TAG_PIN="${XRAY_TAG_PIN:-v25.9.5}"
+XRAY_ZIP="Xray-linux-64.zip"
+XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_TAG_PIN}/${XRAY_ZIP}"
+
+CONFIG="/etc/xray/config.json"
+SERVICE="/etc/systemd/system/xray.service"
+
+echo "======================================"
+echo "       INSTALL XRAY CORE"
+echo "======================================"
+
+# Pastikan root
+if [[ "$EUID" -ne 0 ]]; then
+    echo "Jalankan menggunakan root atau sudo."
+    exit 1
+fi
+
+# ---------- DEPENDENCIES ----------
+echo "[1/6] Memeriksa dependensi..."
+
+apt-get update -y
+apt-get install -y curl unzip ca-certificates
+
+# ---------- DIRECTORIES ----------
+echo "[2/6] Membuat direktori..."
+
+mkdir -p /etc/xray
+mkdir -p /var/log/xray
+mkdir -p /var/lib/xray
+
+# ---------- DOWNLOAD XRAY ----------
+echo "[3/6] Mengunduh Xray-core ${XRAY_TAG_PIN}..."
+
+rm -rf /tmp/xray-extract
+mkdir -p /tmp/xray-extract
+
+curl -fL --retry 3 "$XRAY_URL" \
+    -o "/tmp/$XRAY_ZIP"
+
+unzip -qo "/tmp/$XRAY_ZIP" -d /tmp/xray-extract
+
+if [[ ! -f /tmp/xray-extract/xray ]]; then
+    echo "ERROR: Binary Xray tidak ditemukan!"
+    exit 1
+fi
+
+install -m 755 /tmp/xray-extract/xray /usr/local/bin/xray
+
+rm -rf "/tmp/$XRAY_ZIP" /tmp/xray-extract
+
+echo "Versi Xray:"
+/usr/local/bin/xray version
+
+# ---------- CONFIGURATION ----------
+echo "[4/6] Memeriksa konfigurasi..."
+
+if [[ ! -f "$CONFIG" ]]; then
+    cat > "$CONFIG" <<'EOF'
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log"
+  },
+  "inbounds": [],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ]
+}
+EOF
+    echo "Konfigurasi awal berhasil dibuat."
+else
+    echo "Konfigurasi lama ditemukan, tidak diubah."
+fi
+
+# Validasi konfigurasi
+/usr/local/bin/xray run -test -config "$CONFIG"
+
+# ---------- SYSTEMD SERVICE ----------
+echo "[5/6] Membuat service systemd..."
+
+cat > "$SERVICE" <<'EOF'
+[Unit]
+Description=Xray Core Service
+Documentation=https://github.com/XTLS/Xray-core
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/xray run -config /etc/xray/config.json
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# ---------- ENABLE SERVICE ----------
+echo "[6/6] Mengaktifkan Xray..."
+
+systemctl daemon-reload
+systemctl enable xray
+
+systemctl restart xray
+
+sleep 2
+
+if systemctl is-active --quiet xray; then
+    echo "======================================"
+    echo "       XRAY BERHASIL DIPASANG"
+    echo "======================================"
+    systemctl status xray --no-pager -l
+else
+    echo "======================================"
+    echo "       XRAY GAGAL BERJALAN"
+    echo "======================================"
+    journalctl -u xray -n 50 --no-pager
+    exit 1
+fi
+#!/bin/bash
+set -Eeuo pipefail
+
+# ---------- KONFIGURASI ----------
+XRAY_TAG_PIN="${XRAY_TAG_PIN:-v25.9.5}"
+XRAY_ZIP="Xray-linux-64.zip"
+XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_TAG_PIN}/${XRAY_ZIP}"
+
+CONFIG="/etc/xray/config.json"
+SERVICE="/etc/systemd/system/xray.service"
+
+echo "======================================"
+echo "       INSTALL XRAY CORE"
+echo "======================================"
+
+# Pastikan root
+if [[ "$EUID" -ne 0 ]]; then
+    echo "Jalankan menggunakan root atau sudo."
+    exit 1
+fi
+
+# ---------- DEPENDENCIES ----------
+echo "[1/6] Memeriksa dependensi..."
+
+apt-get update -y
+apt-get install -y curl unzip ca-certificates
+
+# ---------- DIRECTORIES ----------
+echo "[2/6] Membuat direktori..."
+
+mkdir -p /etc/xray
+mkdir -p /var/log/xray
+mkdir -p /var/lib/xray
+
+# ---------- DOWNLOAD XRAY ----------
+echo "[3/6] Mengunduh Xray-core ${XRAY_TAG_PIN}..."
+
+rm -rf /tmp/xray-extract
+mkdir -p /tmp/xray-extract
+
+curl -fL --retry 3 "$XRAY_URL" \
+    -o "/tmp/$XRAY_ZIP"
+
+unzip -qo "/tmp/$XRAY_ZIP" -d /tmp/xray-extract
+
+if [[ ! -f /tmp/xray-extract/xray ]]; then
+    echo "ERROR: Binary Xray tidak ditemukan!"
+    exit 1
+fi
+
+install -m 755 /tmp/xray-extract/xray /usr/local/bin/xray
+
+rm -rf "/tmp/$XRAY_ZIP" /tmp/xray-extract
+
+echo "Versi Xray:"
+/usr/local/bin/xray version
+
+# ---------- CONFIGURATION ----------
+echo "[4/6] Memeriksa konfigurasi..."
+
+if [[ ! -f "$CONFIG" ]]; then
+    cat > "$CONFIG" <<'EOF'
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log"
+  },
+  "inbounds": [],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ]
+}
+EOF
+    echo "Konfigurasi awal berhasil dibuat."
+else
+    echo "Konfigurasi lama ditemukan, tidak diubah."
+fi
+
+# Validasi konfigurasi
+/usr/local/bin/xray run -test -config "$CONFIG"
+
+# ---------- SYSTEMD SERVICE ----------
+echo "[5/6] Membuat service systemd..."
+
+cat > "$SERVICE" <<'EOF'
+[Unit]
+Description=Xray Core Service
+Documentation=https://github.com/XTLS/Xray-core
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/xray run -config /etc/xray/config.json
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# ---------- ENABLE SERVICE ----------
+echo "[6/6] Mengaktifkan Xray..."
+
+systemctl daemon-reload
+systemctl enable xray
+
+systemctl restart xray
+
+sleep 2
+
+if systemctl is-active --quiet xray; then
+    echo "======================================"
+    echo "       XRAY BERHASIL DIPASANG"
+    echo "======================================"
+    systemctl status xray --no-pager -l
+else
+    echo "======================================"
+    echo "       XRAY GAGAL BERJALAN"
+    echo "======================================"
+    journalctl -u xray -n 50 --no-pager
+    exit 1
+fi
