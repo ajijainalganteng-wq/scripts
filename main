@@ -740,7 +740,7 @@ XRAY_SETUP() {
     print_install "Installing Xray Core v26"
 
     local domainSock_dir="/run/xray"
-    [[ ! -d $domainSock_dir ]] && mkdir -p "$domainSock_dir"
+    mkdir -p "$domainSock_dir" /etc/xray
     id www-data >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin www-data
     chown www-data:www-data "$domainSock_dir"
 
@@ -784,10 +784,16 @@ XRAY_SETUP() {
 [Unit]
 Description=Xray Service
 After=network.target
+Wants=network.target
 [Service]
+Type=simple
 User=www-data
+Group=www-data
+RuntimeDirectory=xray
+RuntimeDirectoryMode=0755
 ExecStart=/usr/local/bin/xray run -config /etc/xray/config.json
 Restart=on-failure
+RestartSec=3
 RestartPreventExitStatus=23
 LimitNPROC=10000
 LimitNOFILE=1000000
@@ -796,15 +802,92 @@ WantedBy=multi-user.target
 EOF
 
     chmod +x /etc/systemd/system/runn.service
-    rm -rf /etc/systemd/system/xray.service
+
+    # Perbaikan: hapus direktori override, bukan file service Xray
+    rm -rf /etc/systemd/system/xray.service.d
 
     # Buat hap.pem dari SSL cert yang sudah di-install
-      if [[ -f /etc/xray/xray.crt && -f /etc/xray/xray.key ]]; then
-          cat /etc/xray/xray.crt /etc/xray/xray.key > /etc/haproxy/hap.pem
-          chmod 600 /etc/haproxy/hap.pem
-          print_ok "HAProxy PEM certificate created"
-      fi
-      print_success "Xray config, service and configs"
+    if [[ -f /etc/xray/xray.crt && -f /etc/xray/xray.key ]]; then
+        cat /etc/xray/xray.crt /etc/xray/xray.key > /etc/haproxy/hap.pem
+        chmod 600 /etc/haproxy/hap.pem
+        print_ok "HAProxy PEM certificate created"
+    fi
+
+    print_success "Xray config, service and configs"
+
+    # ==========================================
+    # PERBAIKAN: VALIDASI XRAY BINARY
+    # ==========================================
+    if [[ ! -x /usr/local/bin/xray ]]; then
+        print_error "Xray binary tidak ditemukan"
+        return 1
+    fi
+
+    # ==========================================
+    # PERBAIKAN: VALIDASI CONFIG JSON
+    # ==========================================
+    if [[ ! -s /etc/xray/config.json ]]; then
+        print_error "Xray config.json kosong atau tidak ditemukan"
+        return 1
+    fi
+
+    if ! python3 -m json.tool /etc/xray/config.json >/dev/null 2>&1; then
+        print_error "Format config.json tidak valid"
+        return 1
+    fi
+
+    # ==========================================
+    # PERBAIKAN: PERMISSION XRAY
+    # ==========================================
+    chown root:www-data /etc/xray
+    chmod 750 /etc/xray
+
+    chown root:www-data /etc/xray/config.json
+    chmod 640 /etc/xray/config.json
+
+    # ==========================================
+    # PERBAIKAN: TEST CONFIG XRAY
+    # ==========================================
+    print_install "Testing Xray configuration"
+
+    if ! /usr/local/bin/xray run -test -config /etc/xray/config.json; then
+        print_error "Xray configuration test failed"
+        return 1
+    fi
+
+    # ==========================================
+    # PERBAIKAN: SYSTEMD RELOAD
+    # ==========================================
+    print_install "Activating Xray service"
+
+    systemctl daemon-reload
+
+    # ==========================================
+    # PERBAIKAN: ENABLE XRAY OTOMATIS
+    # ==========================================
+    systemctl enable xray
+
+    # ==========================================
+    # PERBAIKAN: RESTART XRAY
+    # ==========================================
+    systemctl reset-failed xray >/dev/null 2>&1
+    systemctl restart xray
+
+    sleep 3
+
+    # ==========================================
+    # PERIKSA STATUS XRAY
+    # ==========================================
+    if systemctl is-active --quiet xray; then
+        print_success "XRAY SUCCESSFULLY RUNNING"
+        print_success "Xray service is ACTIVE"
+    else
+        print_error "Xray gagal berjalan!"
+
+        journalctl -u xray -n 20 --no-pager
+
+        return 1
+    fi
 }
 
 # ══════════════════════════════════════════════
