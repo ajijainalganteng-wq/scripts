@@ -855,39 +855,6 @@ EOF
         return 1
     fi
 
-    # ==========================================
-    # PERBAIKAN: SYSTEMD RELOAD
-    # ==========================================
-    print_install "Activating Xray service"
-
-    systemctl daemon-reload
-
-    # ==========================================
-    # PERBAIKAN: ENABLE XRAY OTOMATIS
-    # ==========================================
-    systemctl enable xray
-
-    # ==========================================
-    # PERBAIKAN: RESTART XRAY
-    # ==========================================
-    systemctl reset-failed xray >/dev/null 2>&1
-    systemctl restart xray
-
-    sleep 3
-
-    # ==========================================
-    # PERIKSA STATUS XRAY
-    # ==========================================
-    if systemctl is-active --quiet xray; then
-        print_success "XRAY SUCCESSFULLY RUNNING"
-        print_success "Xray service is ACTIVE"
-    else
-        print_error "Xray gagal berjalan!"
-
-        journalctl -u xray -n 20 --no-pager
-
-        return 1
-    fi
 }
 
 # ══════════════════════════════════════════════
