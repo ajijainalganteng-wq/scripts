@@ -815,46 +815,6 @@ EOF
 
     print_success "Xray config, service and configs"
 
-    # ==========================================
-    # PERBAIKAN: VALIDASI XRAY BINARY
-    # ==========================================
-    if [[ ! -x /usr/local/bin/xray ]]; then
-        print_error "Xray binary tidak ditemukan"
-        return 1
-    fi
-
-    # ==========================================
-    # PERBAIKAN: VALIDASI CONFIG JSON
-    # ==========================================
-    if [[ ! -s /etc/xray/config.json ]]; then
-        print_error "Xray config.json kosong atau tidak ditemukan"
-        return 1
-    fi
-
-    if ! python3 -m json.tool /etc/xray/config.json >/dev/null 2>&1; then
-        print_error "Format config.json tidak valid"
-        return 1
-    fi
-
-    # ==========================================
-    # PERBAIKAN: PERMISSION XRAY
-    # ==========================================
-    chown root:www-data /etc/xray
-    chmod 750 /etc/xray
-
-    chown root:www-data /etc/xray/config.json
-    chmod 640 /etc/xray/config.json
-
-    # ==========================================
-    # PERBAIKAN: TEST CONFIG XRAY
-    # ==========================================
-    print_install "Testing Xray configuration"
-
-    if ! /usr/local/bin/xray run -test -config /etc/xray/config.json; then
-        print_error "Xray configuration test failed"
-        return 1
-    fi
-
 }
 
 # ══════════════════════════════════════════════
